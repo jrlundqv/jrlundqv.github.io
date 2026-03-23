@@ -1,5 +1,3 @@
-[two_week_training_planner.html](https://github.com/user-attachments/files/26178591/two_week_training_planner.html)
-<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
