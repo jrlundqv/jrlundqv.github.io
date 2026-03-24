@@ -1,413 +1,917 @@
-<html lang="en">
+<html lang="no">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Two-Week Training Planner</title>
+<title>Treningsplan – lundq.no</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f4f0;padding:1.5rem;color:#1a1a18}
-.planner{max-width:960px;margin:0 auto}
-.week-section{margin-bottom:1.25rem}
-.week-label{font-size:11px;font-weight:500;color:#5f5e5a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;display:flex;align-items:center;gap:8px}
-.week-label-line{flex:1;height:0.5px;background:#d3d1c7}
-.week-status{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
-.ws-ok{background:#EAF3DE;color:#3B6D11;border:0.5px solid #C0DD97}
-.ws-warn{background:#FCEBEB;color:#A32D2D;border:0.5px solid #F7C1C1}
-.ws-info{background:#eeecea;color:#5f5e5a;border:0.5px solid #d3d1c7}
-.week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
-.day-col{min-height:110px;border:0.5px solid #d3d1c7;border-radius:8px;padding:6px;background:#eeecea;transition:border 0.1s,background 0.1s}
-.day-col.highlight{border:1.5px dashed #888780;background:#fff}
-.day-col.conflict{border:1px solid rgba(226,75,74,0.35);background:rgba(252,235,235,0.2)}
-.day-header{font-size:10px;font-weight:500;color:#5f5e5a;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px;text-align:center}
-.day-header span{display:block;font-size:15px;font-weight:500;color:#1a1a18;letter-spacing:0;text-transform:none}
-.drop-zone{min-height:50px;display:flex;flex-direction:column;gap:3px}
-.workout-card{border-radius:5px;padding:4px 6px;font-size:11px;font-weight:500;cursor:grab;user-select:none;border:0.5px solid transparent;transition:opacity 0.12s,transform 0.1s;display:flex;align-items:center;justify-content:space-between;gap:3px}
-.workout-card:active{cursor:grabbing;opacity:0.6;transform:scale(0.96)}
-.workout-card.dragging{opacity:0.35}
-.card-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.card-actions{display:none;gap:2px;flex-shrink:0}
-.workout-card:hover .card-actions{display:flex}
-.card-btn{background:none;border:none;cursor:pointer;padding:1px 3px;border-radius:3px;font-size:10px;opacity:0.65;line-height:1}
-.card-btn:hover{opacity:1;background:rgba(0,0,0,0.08)}
-.wc-strength{background:#E6F1FB;color:#0C447C;border-color:#B5D4F4}
-.wc-cardio-z2{background:#EAF3DE;color:#27500A;border-color:#C0DD97}
-.wc-cardio-hi{background:#FAEEDA;color:#633806;border-color:#FAC775}
-.wc-wrestling{background:#EEEDFE;color:#3C3489;border-color:#CECBF6}
-.wc-custom{background:#eeecea;color:#1a1a18;border-color:#888780}
-.bank-row{display:flex;flex-wrap:wrap;gap:5px;padding:8px 10px;border:0.5px solid #d3d1c7;border-radius:8px;background:#fff;min-height:38px;align-items:flex-start}
-.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f4f0;padding:1.25rem 1.5rem 2.5rem;color:#1a1a18;font-size:13px}
+.planner{max-width:980px;margin:0 auto}
+
+/* ── top bar ── */
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px}
 .top-bar-right{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.legend{display:flex;flex-wrap:wrap;gap:6px}
-.leg-item{display:flex;align-items:center;gap:4px;font-size:11px;color:#5f5e5a}
-.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.btn-sm{font-size:11px;padding:4px 9px;cursor:pointer;border-radius:6px;border:0.5px solid #888780;background:transparent;color:#5f5e5a;white-space:nowrap}
-.btn-sm:hover{background:#eeecea}
-.btn-primary{background:#E6F1FB;color:#0C447C;border-color:#B5D4F4}
-.btn-primary:hover{background:#B5D4F4}
-.btn-advance{background:#EEEDFE;color:#3C3489;border-color:#CECBF6}
-.btn-advance:hover{background:#CECBF6}
-.btn-save{background:#EAF3DE;color:#27500A;border-color:#C0DD97}
-.btn-save:hover{background:#C0DD97}
-.btn-divider{width:0.5px;height:18px;background:#d3d1c7;align-self:center}
 .save-indicator{font-size:10px;color:#3B6D11;opacity:0;transition:opacity 0.3s;align-self:center}
 .save-indicator.show{opacity:1}
-.global-warns{display:flex;flex-direction:column;gap:3px;margin:6px 0 8px}
-.warn{font-size:11px;color:#A32D2D;background:#FCEBEB;border:0.5px solid #F7C1C1;border-radius:5px;padding:3px 8px}
-.info-msg{font-size:11px;color:#5f5e5a;background:#eeecea;border:0.5px solid #d3d1c7;border-radius:5px;padding:3px 8px}
-.section-label{font-size:11px;font-weight:500;color:#5f5e5a;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;z-index:100}
-.modal{background:#fff;border:0.5px solid #888780;border-radius:12px;padding:18px;width:300px;max-width:90vw}
+.save-indicator.error{color:#A32D2D}
+.btn-divider{width:0.5px;height:18px;background:#d3d1c7;align-self:center}
+.legend{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:11px;color:#5f5e5a}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+.btn{font-size:11px;padding:4px 9px;cursor:pointer;border-radius:6px;border:0.5px solid #888780;background:transparent;color:#5f5e5a;white-space:nowrap;line-height:1.5}
+.btn:hover{background:#eeecea}
+.btn-blue{background:#E6F1FB;color:#0C447C;border-color:#B5D4F4}.btn-blue:hover{background:#B5D4F4}
+.btn-green{background:#EAF3DE;color:#27500A;border-color:#C0DD97}.btn-green:hover{background:#C0DD97}
+.btn-red{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}.btn-red:hover{background:#F7C1C1}
+.btn:disabled{opacity:0.4;cursor:default;pointer-events:none}
+
+/* ── mode banner ── */
+.mode-banner{padding:8px 14px;border-radius:8px;font-size:12px;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mode-banner.viewer{background:#E6F1FB;border:0.5px solid #B5D4F4;color:#0C447C}
+.mode-banner.editor{background:#EAF3DE;border:0.5px solid #C0DD97;color:#27500A}
+.mode-banner .mode-icon{font-size:14px}
+.mode-banner .mode-text{flex:1}
+.mode-banner .mode-time{font-size:11px;opacity:0.7;margin-left:auto}
+
+/* ── loading ── */
+.loading-overlay{position:fixed;inset:0;background:#f5f4f0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999}
+.loading-spinner{width:28px;height:28px;border:2.5px solid #d3d1c7;border-top-color:#0C447C;border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{margin-top:12px;font-size:12px;color:#888780}
+
+/* ── week card ── */
+.week-section{margin-bottom:10px;border:0.5px solid #d3d1c7;border-radius:10px;background:#fff;overflow:hidden}
+.week-header{display:flex;align-items:center;gap:8px;padding:9px 13px;user-select:none;background:#fff}
+.week-header.collapsible{cursor:pointer}
+.week-header.collapsible:hover{background:#f9f8f5}
+.chevron{font-size:9px;color:#aaa;transition:transform 0.18s;flex-shrink:0;display:inline-block}
+.chevron.open{transform:rotate(90deg)}
+.wk-label{font-size:11px;font-weight:600;color:#1a1a18;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap}
+.wk-sub{font-size:11px;color:#888780;white-space:nowrap}
+.wk-current-badge{font-size:10px;background:#E6F1FB;color:#0C447C;border:0.5px solid #B5D4F4;border-radius:10px;padding:1px 7px;white-space:nowrap}
+.hline{flex:1;height:0.5px;background:#e8e7e3}
+.week-status{font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0;border:0.5px solid transparent}
+.ws-ok{background:#EAF3DE;color:#3B6D11;border-color:#C0DD97}
+.ws-warn{background:#FCEBEB;color:#A32D2D;border-color:#F7C1C1}
+.ws-info{background:#eeecea;color:#5f5e5a;border-color:#d3d1c7}
+.week-body{padding:10px 12px 13px;border-top:0.5px solid #eeecea}
+.week-body.collapsed{display:none}
+
+/* ── grid ── */
+.week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.day-col{min-height:120px;border:0.5px solid #d3d1c7;border-radius:8px;padding:6px;background:#f5f4f0;transition:border 0.1s,background 0.1s;display:flex;flex-direction:column}
+.day-col.over{border:1.5px dashed #888780;background:#fff}
+.day-col.conflict{border-color:rgba(226,75,74,0.5);background:rgba(252,235,235,0.25)}
+.day-col.past{opacity:0.55}
+.day-name{font-size:10px;font-weight:500;color:#888780;text-transform:uppercase;letter-spacing:0.04em;text-align:center;margin-bottom:3px}
+.day-num{font-size:15px;font-weight:500;color:#1a1a18;text-align:center;margin-bottom:5px;line-height:1}
+.day-col.today .day-num{color:#0C447C;font-weight:700}
+.drop-zone{flex:1;min-height:52px;display:flex;flex-direction:column;gap:3px}
+
+/* ── cards ── */
+.workout-card{border-radius:5px;padding:4px 6px;font-size:11px;font-weight:500;cursor:default;user-select:none;border:0.5px solid transparent;display:flex;align-items:center;justify-content:space-between;gap:3px;transition:opacity 0.12s,transform 0.1s}
+.edit-mode .workout-card{cursor:grab}
+.workout-card:active{opacity:0.55;transform:scale(0.95)}
+.workout-card.dragging{opacity:0.3}
+.card-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-actions{display:none;gap:1px;flex-shrink:0}
+.edit-mode .workout-card:hover .card-actions{display:flex}
+.card-btn{background:none;border:none;cursor:pointer;padding:1px 3px;border-radius:3px;font-size:10px;opacity:0.55;line-height:1}
+.card-btn:hover{opacity:1;background:rgba(0,0,0,0.1)}
+.card-note{font-size:10px;color:#888780;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── bank ── */
+.bank-wrap{margin-top:10px}
+.bank-label{font-size:11px;font-weight:500;color:#5f5e5a;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px}
+.bank-row{display:flex;flex-wrap:wrap;gap:5px;padding:8px 10px;border:0.5px solid #d3d1c7;border-radius:8px;background:#fff;min-height:40px;align-items:flex-start}
+
+/* ── warnings ── */
+.warns-wrap{display:flex;flex-direction:column;gap:3px;margin:8px 0 2px}
+.warn-msg{font-size:11px;color:#A32D2D;background:#FCEBEB;border:0.5px solid #F7C1C1;border-radius:5px;padding:3px 9px}
+
+/* ── modal ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.28);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal{background:#fff;border:0.5px solid #bbb;border-radius:12px;padding:20px;width:360px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-wide{width:520px}
 .modal h3{font-size:14px;font-weight:500;margin-bottom:14px;color:#1a1a18}
-.modal p{font-size:12px;color:#5f5e5a;margin-bottom:14px;line-height:1.6}
+.modal p{font-size:12px;color:#5f5e5a;margin-bottom:12px;line-height:1.6}
 .modal label{font-size:12px;color:#5f5e5a;display:block;margin-bottom:3px}
-.modal input,.modal select{width:100%;padding:6px 8px;font-size:13px;border:0.5px solid #888780;border-radius:6px;background:#eeecea;color:#1a1a18;margin-bottom:10px;outline:none}
-.modal input:focus,.modal select:focus{border-color:#444441}
-.modal-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:4px}
+.modal input[type=text],.modal input[type=number],.modal select,.modal textarea{width:100%;padding:6px 8px;font-size:12px;border:0.5px solid #888780;border-radius:6px;background:#f5f4f0;color:#1a1a18;margin-bottom:10px;outline:none;font-family:inherit}
+.modal textarea{resize:vertical;min-height:56px}
+.modal-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:8px;flex-wrap:wrap;align-items:center}
 .modal-del{margin-right:auto}
+
+/* ── settings ── */
+.settings-section{margin-bottom:18px}
+.settings-section h4{font-size:12px;font-weight:500;color:#1a1a18;margin-bottom:8px;padding-bottom:5px;border-bottom:0.5px solid #eeecea}
+.type-edit-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid #f0efeb;flex-wrap:wrap}
+.type-edit-row:last-child{border-bottom:none}
+.rule-row{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:0.5px solid #f0efeb}
+.rule-row:last-child{border-bottom:none}
+.rule-info{flex:1}
+.rule-title{font-size:12px;font-weight:500;color:#1a1a18;margin-bottom:2px}
+.rule-desc{font-size:11px;color:#888780;line-height:1.4}
+.rule-targets{margin-top:6px;display:flex;flex-direction:column;gap:4px;font-size:11px;color:#5f5e5a}
+.rule-target-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rule-target-row span{white-space:nowrap;color:#1a1a18}
+.rule-targets input{width:52px;max-width:52px;padding:2px 4px;font-size:11px;border:0.5px solid #888780;border-radius:4px;background:#f5f4f0;color:#1a1a18;outline:none;margin:0;text-align:center;flex-shrink:0}
+.modal .rule-targets input{width:52px;max-width:52px}
+.cp-wrap{position:relative;display:inline-block}
+.cp-swatch{width:26px;height:20px;border-radius:4px;border:0.5px solid #ccc;display:inline-block;vertical-align:middle}
+.cp-wrap input[type=color]{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;padding:0;border:none}
+
+/* ── login ── */
+.login-section{margin-bottom:14px}
+.login-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.login-row input{padding:5px 8px;font-size:12px;border:0.5px solid #888780;border-radius:6px;background:#f5f4f0;color:#1a1a18;outline:none;font-family:inherit;width:220px}
+.login-row input::placeholder{color:#aaa}
+
+/* ── responsive ── */
+@media(max-width:700px){
+  body{padding:0.75rem 0.75rem 2rem}
+  .week-grid{grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+  .day-col{min-height:80px;padding:4px}
+  .day-name{font-size:8px}
+  .day-num{font-size:12px}
+  .workout-card{font-size:9px;padding:3px 4px}
+  .card-actions{display:none!important}
+}
 </style>
 </head>
 <body>
+<div class="loading-overlay" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Laster treningsplan…</div>
+</div>
+
 <div class="planner">
+  <!-- mode banner -->
+  <div id="mode-banner"></div>
+
+  <!-- login for editor (hidden once authenticated) -->
+  <div id="login-section" class="login-section" style="display:none">
+    <div class="login-row">
+      <input type="password" id="token-input" placeholder="Lim inn API-nøkkel for å redigere…">
+      <button class="btn btn-blue" onclick="attemptLogin()">Logg inn</button>
+    </div>
+  </div>
+
   <div class="top-bar">
-    <div class="legend">
-      <div class="leg-item"><div class="leg-dot" style="background:#378ADD"></div>Strength</div>
-      <div class="leg-item"><div class="leg-dot" style="background:#639922"></div>Z2</div>
-      <div class="leg-item"><div class="leg-dot" style="background:#BA7517"></div>Threshold/VO2</div>
-      <div class="leg-item"><div class="leg-dot" style="background:#7F77DD"></div>Wrestling</div>
-    </div>
-    <div class="top-bar-right">
-      <span class="save-indicator" id="save-indicator">Saved ✓</span>
-      <button class="btn-sm btn-save" onclick="saveState()">Save</button>
-      <div class="btn-divider"></div>
-      <button class="btn-sm btn-advance" onclick="confirmAdvanceWeek()">Advance week →</button>
-      <button class="btn-sm btn-primary" onclick="openAddModal()">+ New workout</button>
-      <button class="btn-sm" onclick="confirmReset()">Reset</button>
+    <div class="legend" id="legend"></div>
+    <div class="top-bar-right" id="toolbar">
+      <!-- filled dynamically based on mode -->
     </div>
   </div>
 
-  <div class="week-section">
-    <div class="week-label">Week 1 <div class="week-label-line"></div><span class="week-status ws-info" id="status-w1">—</span></div>
-    <div class="week-grid" id="grid-w1"></div>
-  </div>
-  <div class="week-section">
-    <div class="week-label">Week 2 <div class="week-label-line"></div><span class="week-status ws-info" id="status-w2">—</span></div>
-    <div class="week-grid" id="grid-w2"></div>
-  </div>
+  <div id="section-prev"></div>
+  <div id="section-curr"></div>
+  <div id="section-next"></div>
 
-  <div class="global-warns" id="global-warns"></div>
+  <div class="warns-wrap" id="global-warns"></div>
 
-  <div>
-    <div class="section-label">Unscheduled</div>
+  <div class="bank-wrap" id="bank-wrap" style="display:none">
+    <div class="bank-label">Ikke planlagt</div>
     <div class="bank-row" id="bank"></div>
   </div>
 </div>
-
 <div id="modal-container"></div>
 
 <script>
-const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const WEEKS=['w1','w2'];
-const STORAGE_KEY='training-planner-v1';
+'use strict';
 
-const DEFAULT_WORKOUTS={
-  'lower-a-1': {label:'Lower A \u2013 Squat',    cls:'wc-strength',  heavy:true,  type:'strength'},
-  'upper-a-1': {label:'Upper A \u2013 Bench',    cls:'wc-strength',  heavy:false, type:'strength'},
-  'lower-b-1': {label:'Lower B \u2013 Deadlift', cls:'wc-strength',  heavy:true,  type:'strength'},
-  'upper-b-1': {label:'Upper B \u2013 Bench+',   cls:'wc-strength',  heavy:false, type:'strength'},
-  'wrestling-1':{label:'Wrestling',              cls:'wc-wrestling', heavy:true,  type:'wrestling'},
-  'z2-w1-1':  {label:'Z2 cardio',                cls:'wc-cardio-z2', heavy:false, type:'z2'},
-  'z2-w1-2':  {label:'Z2 cardio',                cls:'wc-cardio-z2', heavy:false, type:'z2'},
-  'hi-w1-1':  {label:'Threshold / VO2',          cls:'wc-cardio-hi', heavy:true,  type:'hi'},
-  'lower-a-2': {label:'Lower A \u2013 Squat',    cls:'wc-strength',  heavy:true,  type:'strength'},
-  'upper-a-2': {label:'Upper A \u2013 Bench',    cls:'wc-strength',  heavy:false, type:'strength'},
-  'lower-b-2': {label:'Lower B \u2013 Deadlift', cls:'wc-strength',  heavy:true,  type:'strength'},
-  'upper-b-2': {label:'Upper B \u2013 Bench+',   cls:'wc-strength',  heavy:false, type:'strength'},
-  'wrestling-2':{label:'Wrestling',              cls:'wc-wrestling', heavy:true,  type:'wrestling'},
-  'z2-w2-1':  {label:'Z2 cardio',                cls:'wc-cardio-z2', heavy:false, type:'z2'},
-  'z2-w2-2':  {label:'Z2 cardio',                cls:'wc-cardio-z2', heavy:false, type:'z2'},
-  'hi-w2-1':  {label:'Threshold / VO2',          cls:'wc-cardio-hi', heavy:true,  type:'hi'},
+/* ═══════════════════════════════════════════
+   CONFIG — Sett disse etter oppsett av JSONBin
+   ═══════════════════════════════════════════ */
+const CONFIG = {
+  // JSONBin.io bin ID (opprett en gratis konto på jsonbin.io)
+  BIN_ID: '69c26effaa77b81da91465bf',
+  // JSONBin.io Access Key (Master key fra jsonbin.io dashboardet)
+  // Denne brukes BARE for å SKRIVE (lagre). Lesing er public.
+  // Merk: denne nøkkelen vil være synlig i kildekoden.
+  // JSONBin er gratis og inneholder kun treningsplandata — ingen sensitiv info.
 };
 
-let workouts={};
-let schedule={};
-let dragId=null,dragFrom=null,uidCounter=200;
+/* ═══════════════════════════════════════════ */
 
-function genId(){return 'custom-'+(++uidCounter)}
+const DAYS        = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
+const DAYS_EN     = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const GROUPS      = ['prev','curr','next'];
 
-function defaultSchedule(){
-  const s={};
-  WEEKS.forEach(w=>DAYS.forEach(d=>s[`${w}-${d}`]=[]));
-  return s;
+const DEFAULT_TYPES = {
+  strength: {label:'Styrke',         bg:'#E6F1FB'},
+  z2:       {label:'Z2 cardio',      bg:'#EAF3DE'},
+  hi:       {label:'Terskel/VO2',    bg:'#FAEEDA'},
+  wrestling:{label:'Bryting',        bg:'#EEEDFE'},
+  custom:   {label:'Annet',          bg:'#eeecea'},
+};
+const DEFAULT_RULES = {
+  noHardBeforeHeavyStrength:{enabled:true,
+    label:'Ingen hard økt før tung styrke',
+    desc:'Varsler hvis en "hard"-økt er dagen før en styrkeøkt merket "hard"'},
+  noStackedHard:{enabled:true,
+    label:'Ingen stablede harde økter',
+    desc:'Varsler ved 2+ harde økter på samme dag'},
+  noDoubleStrength:{enabled:true,
+    label:'Ingen doble styrkedager',
+    desc:'Varsler ved 2+ styrkeøkter på samme dag'},
+  weekComplete:{enabled:true,
+    label:'Sjekk ukeplan',
+    desc:'Viser "Godt planlagt" når alle mål er nådd uten konflikter',
+    targets:{strength:4, z2:2, hi:1, wrestling:1}},
+};
+
+/* ── state ── */
+let workouts     = {};
+let schedule     = {};
+let workoutTypes = {};
+let rules        = {};
+let collapseState= {prev:true, next:true};
+let uidCounter   = 0;
+let isEditor     = false;
+let apiKey       = '';
+let lastSaved    = null;
+let dragId = null, dragFrom = null;
+
+/* ── date helpers ── */
+function todayISO(){ return localISO(new Date()); }
+function localISO(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+function getMondayOfWeek(dateOrISO){
+  const d = typeof dateOrISO==='string' ? new Date(dateOrISO+'T00:00:00') : new Date(dateOrISO);
+  const dow = d.getDay();
+  const diff = dow===0 ? -6 : 1-dow;
+  d.setDate(d.getDate()+diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function fmtShort(d){ return d.toLocaleDateString('nb-NO',{day:'numeric',month:'short'}); }
+function isoWeekNum(d){
+  const tmp = new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  const dow  = tmp.getUTCDay()||7;
+  tmp.setUTCDate(tmp.getUTCDate()+4-dow);
+  const jan1 = new Date(Date.UTC(tmp.getUTCFullYear(),0,1));
+  return Math.ceil((((tmp-jan1)/86400000)+1)/7);
+}
+function mondayForGroup(group){
+  const currMonday = getMondayOfWeek(todayISO());
+  if(group==='prev') return addDays(currMonday,-7);
+  if(group==='next') return addDays(currMonday, 7);
+  return currMonday;
+}
+function ensureKeys(){
+  GROUPS.forEach(g=>DAYS_EN.forEach(d=>{ const k=`${g}-${d}`; if(!schedule[k]) schedule[k]=[]; }));
+}
+function genId(){ return 'w'+(++uidCounter)+'_'+Math.random().toString(36).slice(2,5); }
+
+/* ── cloud storage via JSONBin.io ── */
+async function cloudLoad(){
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, {
+      headers: { 'X-Access-Key': apiKey || undefined }
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    return json.record || null;
+  } catch(e) {
+    console.warn('Cloud load failed, trying public access:', e);
+    // Try without key (public bin)
+    try {
+      const res = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`);
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      return json.record || null;
+    } catch(e2) {
+      console.error('Cloud load failed:', e2);
+      return null;
+    }
+  }
 }
 
-function saveState(){
-  const state={workouts,schedule,uidCounter};
-  try{
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
-    const ind=document.getElementById('save-indicator');
-    ind.classList.add('show');
-    setTimeout(()=>ind.classList.remove('show'),2200);
-  }catch(e){alert('Could not save to localStorage: '+e.message)}
-}
-
-function loadState(){
-  try{
-    const raw=localStorage.getItem(STORAGE_KEY);
-    if(!raw) return false;
-    const state=JSON.parse(raw);
-    workouts=state.workouts||{...DEFAULT_WORKOUTS};
-    schedule=state.schedule||defaultSchedule();
-    uidCounter=state.uidCounter||200;
-    WEEKS.forEach(w=>DAYS.forEach(d=>{const k=`${w}-${d}`;if(!schedule[k])schedule[k]=[];}));
+async function cloudSave(){
+  if(!isEditor || !apiKey) return false;
+  try {
+    const data = {
+      workouts, schedule, workoutTypes, rules, collapseState, uidCounter,
+      savedAt: new Date().toISOString(),
+      savedBy: 'editor'
+    };
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Access-Key': apiKey
+      },
+      body: JSON.stringify(data)
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    lastSaved = new Date();
     return true;
-  }catch(e){return false}
-}
-
-function init(){
-  if(!loadState()){
-    workouts={...DEFAULT_WORKOUTS};
-    schedule=defaultSchedule();
+  } catch(e) {
+    console.error('Cloud save failed:', e);
+    return false;
   }
-  render();
 }
 
-function advanceWeek(){
-  // w2 → w1, w1 falls to bank, w2 cleared
-  const newSchedule=defaultSchedule();
-  DAYS.forEach(d=>{
-    newSchedule[`w1-${d}`]=[...(schedule[`w2-${d}`]||[])];
-    // w1 workouts naturally surface in bank since they're not in any slot
-  });
-  schedule=newSchedule;
-  render();
-}
+/* ── init ── */
+async function init(){
+  // Check URL params for edit mode
+  const params = new URLSearchParams(window.location.search);
+  const editMode = params.has('edit');
 
-function confirmAdvanceWeek(){
-  const w1HasWorkouts=DAYS.some(d=>(schedule[`w1-${d}`]||[]).length>0);
-  if(w1HasWorkouts){
-    showConfirmModal(
-      'Advance week?',
-      'Week 1 workouts will return to the unscheduled bank. Week 2 slides into Week 1. Week 2 will be cleared for you to plan the next cycle.',
-      advanceWeek
-    );
+  if(editMode){
+    // Check if key is stored in sessionStorage
+    const storedKey = sessionStorage.getItem('jsonbin-key');
+    if(storedKey){
+      apiKey = storedKey;
+      isEditor = true;
+    } else {
+      document.getElementById('login-section').style.display = '';
+    }
+  }
+
+  // Load from cloud
+  const data = await cloudLoad();
+  if(data){
+    workouts      = data.workouts      || {};
+    schedule      = data.schedule      || {};
+    const rawTypes = data.workoutTypes || deepCopy(DEFAULT_TYPES);
+    workoutTypes = {};
+    Object.entries(rawTypes).forEach(([k,t])=>{ workoutTypes[k]={label:t.label||k, bg:t.bg||'#eee'}; });
+    rules         = data.rules         || deepCopy(DEFAULT_RULES);
+    collapseState = data.collapseState || {prev:true,next:true};
+    uidCounter    = data.uidCounter    || 0;
+    if(data.savedAt) lastSaved = new Date(data.savedAt);
   } else {
-    advanceWeek();
+    workoutTypes = deepCopy(DEFAULT_TYPES);
+    rules        = deepCopy(DEFAULT_RULES);
+    collapseState= {prev:true,next:true};
+  }
+  ensureKeys();
+
+  document.getElementById('loading').style.display='none';
+  if(isEditor) document.body.querySelector('.planner').classList.add('edit-mode');
+  renderModeBanner();
+  renderToolbar();
+  render();
+}
+
+function attemptLogin(){
+  const input = document.getElementById('token-input');
+  const key = input.value.trim();
+  if(!key){ input.style.borderColor='#A32D2D'; return; }
+  apiKey = key;
+  isEditor = true;
+  sessionStorage.setItem('jsonbin-key', key);
+  document.getElementById('login-section').style.display='none';
+  document.body.querySelector('.planner').classList.add('edit-mode');
+  renderModeBanner();
+  renderToolbar();
+  render();
+}
+
+function renderModeBanner(){
+  const el = document.getElementById('mode-banner');
+  if(isEditor){
+    el.innerHTML = `<div class="mode-banner editor">
+      <span class="mode-icon">✏️</span>
+      <span class="mode-text"><strong>Redigeringsmodus</strong> — endringer kan lagres til skyen</span>
+      ${lastSaved ? `<span class="mode-time">Sist lagret: ${lastSaved.toLocaleString('nb-NO')}</span>` : ''}
+    </div>`;
+  } else {
+    el.innerHTML = `<div class="mode-banner viewer">
+      <span class="mode-icon">👀</span>
+      <span class="mode-text"><strong>Visningsmodus</strong> — du ser den sist lagrede treningsplanen</span>
+      ${lastSaved ? `<span class="mode-time">Oppdatert: ${lastSaved.toLocaleString('nb-NO')}</span>` : ''}
+    </div>`;
   }
 }
 
-function confirmReset(){
-  showConfirmModal(
-    'Reset planner?',
-    'All scheduled workouts will be cleared and the default card set restored. This does not affect your saved data until you press Save.',
-    ()=>{workouts={...DEFAULT_WORKOUTS};schedule=defaultSchedule();render();}
-  );
+function renderToolbar(){
+  const tb = document.getElementById('toolbar');
+  if(isEditor){
+    tb.innerHTML = `
+      <span class="save-indicator" id="save-indicator"></span>
+      <button class="btn btn-green" onclick="handleSave()">💾 Lagre</button>
+      <div class="btn-divider"></div>
+      <button class="btn btn-blue" onclick="openWorkoutModal(null,null,false)">+ Nytt kort</button>
+      <button class="btn" onclick="openSettingsModal()">Innstillinger</button>
+      <button class="btn" onclick="confirmReset()">Nullstill</button>
+      <div class="btn-divider"></div>
+      <button class="btn btn-red" onclick="logout()">Logg ut</button>
+    `;
+    document.getElementById('bank-wrap').style.display='';
+  } else {
+    tb.innerHTML = `
+      <button class="btn" onclick="location.reload()">🔄 Oppdater</button>
+    `;
+    document.getElementById('bank-wrap').style.display='none';
+  }
 }
 
-function getBank(){
-  const used=new Set([].concat(...Object.values(schedule)));
-  return Object.keys(workouts).filter(id=>!used.has(id));
+async function handleSave(){
+  const indicator = document.getElementById('save-indicator');
+  indicator.textContent = 'Lagrer…';
+  indicator.className = 'save-indicator show';
+
+  const ok = await cloudSave();
+  if(ok){
+    indicator.textContent = 'Lagret ✓';
+    indicator.className = 'save-indicator show';
+    renderModeBanner();
+  } else {
+    indicator.textContent = 'Feil ved lagring ✗';
+    indicator.className = 'save-indicator show error';
+  }
+  setTimeout(()=> indicator.classList.remove('show'), 2500);
 }
 
-function allSlotKeys(){
-  const k=[];WEEKS.forEach(w=>DAYS.forEach(d=>k.push(`${w}-${d}`)));return k;
+function logout(){
+  sessionStorage.removeItem('jsonbin-key');
+  isEditor = false;
+  apiKey = '';
+  document.body.querySelector('.planner').classList.remove('edit-mode');
+  renderModeBanner();
+  renderToolbar();
+  render();
 }
 
-function makeCard(id,fromSlot){
-  const wt=workouts[id];if(!wt)return null;
+function deepCopy(o){ return JSON.parse(JSON.stringify(o)); }
+
+/* ── card helpers ── */
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function typeOf(id){ return workouts[id]?.type||'custom'; }
+function typeDef(key){ return workoutTypes[key]||workoutTypes.custom||{bg:'#eee'}; }
+
+const EXACT_COLORS = {
+  '#e6f1fb': {color:'#0C447C', border:'#B5D4F4'},
+  '#eaf3de': {color:'#27500A', border:'#C0DD97'},
+  '#faeeda': {color:'#633806', border:'#FAC775'},
+  '#eeedfe': {color:'#3C3489', border:'#CECBF6'},
+  '#eeecea': {color:'#444441', border:'#b4b2a9'},
+};
+function deriveColors(bg){
+  const exact = EXACT_COLORS[bg.toLowerCase()];
+  if(exact) return exact;
+  const {h,s,l} = hexToHSL(bg);
+  const borderL = Math.max(0, l - l * 0.13);
+  const border  = hslToHex(h, Math.min(100, s + 5), borderL);
+  const textL   = Math.max(5, l - l * 0.72);
+  const textS   = Math.min(100, s + 15);
+  const color   = hslToHex(h, textS, textL);
+  return {color, border};
+}
+function hexToHSL(hex){
+  const h6=hex.replace('#','');
+  let r=parseInt(h6.slice(0,2),16)/255, g=parseInt(h6.slice(2,4),16)/255, b=parseInt(h6.slice(4,6),16)/255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+  let h=0,s=0,l=(max+min)/2;
+  if(d){
+    s=d/(1-Math.abs(2*l-1));
+    if(max===r) h=((g-b)/d+6)%6;
+    else if(max===g) h=(b-r)/d+2;
+    else h=(r-g)/d+4;
+    h=h/6;
+  }
+  return {h:h*360, s:s*100, l:l*100};
+}
+function hslToHex(h,s,l){
+  h/=360; s/=100; l/=100;
+  const a=s*Math.min(l,1-l);
+  const f=n=>{ const k=(n+h*12)%12; const v=l-a*Math.max(-1,Math.min(k-3,9-k,1)); return Math.round(255*v).toString(16).padStart(2,'0'); };
+  return '#'+f(0)+f(8)+f(4);
+}
+
+function isHard(id){ return !!(workouts[id]?.hard); }
+function isHeavyStrength(id){ const w=workouts[id]; return w && w.type==='strength' && isHard(id); }
+
+function makeCard(id, fromSlot){
+  const w=workouts[id]; if(!w) return null;
+  const t=typeDef(w.type);
+  const {color,border}=deriveColors(t.bg);
   const card=document.createElement('div');
-  card.className=`workout-card ${wt.cls}`;
-  card.draggable=true;card.dataset.id=id;
-  card.innerHTML=`<span class="card-label">${wt.label}</span><span class="card-actions"><button class="card-btn" title="Edit" onclick="event.stopPropagation();openEditModal('${id}','${fromSlot||'bank'}')">&#9998;</button><button class="card-btn" title="Unschedule" onclick="event.stopPropagation();removeCard('${id}','${fromSlot||'bank'}')">&#x2715;</button></span>`;
-  card.addEventListener('dragstart',()=>{dragId=id;dragFrom=fromSlot||'bank';setTimeout(()=>card.classList.add('dragging'),0)});
-  card.addEventListener('dragend',()=>card.classList.remove('dragging'));
+  card.className='workout-card';
+  card.style.cssText=`background:${t.bg};color:${color};border-color:${border}`;
+  card.dataset.id=id;
+  const slot=fromSlot||'bank';
+
+  if(isEditor){
+    card.draggable=true;
+    card.addEventListener('dragstart',()=>{ dragId=id; dragFrom=slot; setTimeout(()=>card.classList.add('dragging'),0); });
+    card.addEventListener('dragend',  ()=>card.classList.remove('dragging'));
+  }
+
+  const hardDot = w.hard ? `<span style="width:5px;height:5px;border-radius:50%;background:${color};opacity:0.5;flex-shrink:0;display:inline-block;margin-right:2px" title="Hard økt"></span>` : '';
+
+  let actionsHTML = '';
+  if(isEditor){
+    actionsHTML = `<span class="card-actions">
+      <button class="card-btn" data-a="copy"   data-id="${id}"                title="Dupliser">⧉</button>
+      <button class="card-btn" data-a="edit"   data-id="${id}" data-s="${slot}" title="Rediger">✎</button>
+      <button class="card-btn" data-a="remove" data-id="${id}" data-s="${slot}" title="Fjern">✕</button>
+    </span>`;
+  }
+
+  card.innerHTML=
+    `<span class="card-label" title="${esc(w.label)}${w.note?'\n'+esc(w.note):''}">${hardDot}${esc(w.label)}</span>`+
+    actionsHTML;
+
+  if(isEditor){
+    card.addEventListener('click', e=>{
+      const btn=e.target.closest('[data-a]'); if(!btn) return; e.stopPropagation();
+      const a=btn.dataset.a;
+      if(a==='copy'  ){ workouts[genId()]={...workouts[id]}; render(); }
+      if(a==='edit'  ) openWorkoutModal(btn.dataset.id, btn.dataset.s, true);
+      if(a==='remove'){ removeFromSlot(btn.dataset.id, btn.dataset.s); render(); }
+    });
+  }
   return card;
 }
-
-function removeCard(id,fromSlot){
-  if(fromSlot&&fromSlot!=='bank') schedule[fromSlot]=schedule[fromSlot].filter(x=>x!==id);
-  render();
+function removeFromSlot(id,slot){
+  if(slot && slot!=='bank') schedule[slot]=(schedule[slot]||[]).filter(x=>x!==id);
 }
 
-function renderGrid(week,containerId){
-  const grid=document.getElementById(containerId);grid.innerHTML='';
-  DAYS.forEach(day=>{
-    const slotKey=`${week}-${day}`;
+/* ── render week section ── */
+function buildSection(group){
+  const monday   = mondayForGroup(group);
+  const sunday   = addDays(monday,6);
+  const wn       = isoWeekNum(monday);
+  const dateRange= `${fmtShort(monday)} – ${fmtShort(sunday)}`;
+  const isCurr   = group==='curr';
+  const collapsed= !isCurr && collapseState[group];
+
+  const sec=document.createElement('div');
+  sec.className='week-section'; sec.dataset.group=group;
+
+  const hdr=document.createElement('div');
+  hdr.className='week-header'+(isCurr?'':' collapsible');
+  hdr.innerHTML=
+    (isCurr?'':  `<span class="chevron ${collapsed?'':'open'}">▶</span>`)+
+    `<span class="wk-label">Uke ${wn}</span>`+
+    `<span class="wk-sub">${dateRange}</span>`+
+    (isCurr?`<span class="wk-current-badge">Denne uken</span>`:'')+
+    `<div class="hline"></div>`+
+    `<span class="week-status ws-info" id="status-${group}">—</span>`;
+  if(!isCurr) hdr.addEventListener('click',()=>{
+    const body=sec.querySelector('.week-body');
+    const chevron=sec.querySelector('.chevron');
+    const nowCollapsed=body.classList.toggle('collapsed');
+    chevron.classList.toggle('open',!nowCollapsed);
+    collapseState[group]=nowCollapsed;
+  });
+
+  const body=document.createElement('div');
+  body.className='week-body'+(collapsed?' collapsed':'');
+
+  const grid=document.createElement('div');
+  grid.className='week-grid';
+  grid.id=`grid-${group}`;
+  body.appendChild(grid);
+
+  sec.appendChild(hdr); sec.appendChild(body);
+  return sec;
+}
+
+function renderGrid(group){
+  const grid=document.getElementById(`grid-${group}`); if(!grid) return;
+  grid.innerHTML='';
+  const monday = mondayForGroup(group);
+  const today  = todayISO();
+  DAYS.forEach((dayName,di)=>{
+    const d    = addDays(monday,di);
+    const dISO = localISO(d);
+    const slot = `${group}-${DAYS_EN[di]}`;
+    const past = dISO < today;
+    const isToday = dISO === today;
+
     const col=document.createElement('div');
-    col.className='day-col';col.dataset.slot=slotKey;
-    col.innerHTML=`<div class="day-header">${day}<span></span></div><div class="drop-zone" id="dz-${slotKey}"></div>`;
+    col.className='day-col'+(past?' past':'')+(isToday?' today':'');
+    col.dataset.slot=slot;
+    col.innerHTML=
+      `<div class="day-name">${dayName}</div>`+
+      `<div class="day-num">${d.getDate()}</div>`+
+      `<div class="drop-zone" id="dz-${slot}"></div>`;
     grid.appendChild(col);
-    const dz=col.querySelector('.drop-zone');
-    dz.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('highlight')});
-    dz.addEventListener('dragleave',()=>col.classList.remove('highlight'));
-    dz.addEventListener('drop',e=>{
-      e.preventDefault();col.classList.remove('highlight');
-      if(!dragId)return;
-      if(dragFrom&&dragFrom!=='bank') schedule[dragFrom]=schedule[dragFrom].filter(x=>x!==dragId);
-      if(!schedule[slotKey].includes(dragId)) schedule[slotKey].push(dragId);
-      dragId=null;dragFrom=null;render();
-    });
-    (schedule[slotKey]||[]).forEach(id=>{const c=makeCard(id,slotKey);if(c)dz.appendChild(c)});
+
+    if(isEditor){
+      const dz=col.querySelector('.drop-zone');
+      col.addEventListener('dragover', e=>{ e.preventDefault(); col.classList.add('over'); });
+      col.addEventListener('dragleave', e=>{ if(!col.contains(e.relatedTarget)) col.classList.remove('over'); });
+      col.addEventListener('drop', e=>{
+        e.preventDefault(); col.classList.remove('over');
+        if(!dragId) return;
+        removeFromSlot(dragId, dragFrom);
+        if(!schedule[slot]) schedule[slot]=[];
+        if(!schedule[slot].includes(dragId)) schedule[slot].push(dragId);
+        dragId=null; dragFrom=null; render();
+      });
+    }
+    (schedule[slot]||[]).forEach(id=>{ const c=makeCard(id,slot); if(c) col.querySelector('.drop-zone').appendChild(c); });
   });
 }
 
 function renderBank(){
-  const bank=document.getElementById('bank');bank.innerHTML='';
-  bank.addEventListener('dragover',e=>e.preventDefault());
-  bank.addEventListener('drop',e=>{
-    e.preventDefault();if(!dragId)return;
-    if(dragFrom&&dragFrom!=='bank') schedule[dragFrom]=schedule[dragFrom].filter(x=>x!==dragId);
-    dragId=null;dragFrom=null;render();
+  if(!isEditor) return;
+  const bank=document.getElementById('bank'); bank.innerHTML='';
+  bank.addEventListener('dragover', e=>e.preventDefault());
+  bank.addEventListener('drop', e=>{
+    e.preventDefault(); if(!dragId) return;
+    removeFromSlot(dragId, dragFrom);
+    dragId=null; dragFrom=null; render();
   });
-  const bk=getBank();
-  if(!bk.length){
-    const msg=document.createElement('span');
-    msg.style.cssText='font-size:11px;color:#888780;padding:2px 0';
-    msg.textContent='All workouts scheduled';bank.appendChild(msg);return;
+  const used = new Set([].concat(...Object.values(schedule)));
+  const free = Object.keys(workouts).filter(id=>!used.has(id));
+  if(!free.length){
+    const m=document.createElement('span');
+    m.style.cssText='font-size:11px;color:#aaa;padding:2px 0';
+    m.textContent='Alle kort er planlagt'; bank.appendChild(m); return;
   }
-  bk.forEach(id=>{const c=makeCard(id,'bank');if(c)bank.appendChild(c)});
+  free.forEach(id=>{ const c=makeCard(id,'bank'); if(c) bank.appendChild(c); });
 }
 
-function getOrderedSlots(){
-  const s=[];WEEKS.forEach(w=>DAYS.forEach(d=>s.push(`${w}-${d}`)));return s;
+/* ── conflict analysis ── */
+function orderedSlots(){
+  const out=[]; GROUPS.forEach(g=>DAYS_EN.forEach(d=>out.push(`${g}-${d}`))); return out;
 }
 
-function slotLabel(slot){
-  const p=slot.split('-');
-  return `${p[0]==='w1'?'Wk1':'Wk2'} ${p[1]}`;
-}
-
-function analyzeWeek(week){
+function analyzeGroup(group){
   const warns=[];
-  const slots=getOrderedSlots();
-  const weekSlots=DAYS.map(d=>`${week}-${d}`);
-  weekSlots.forEach(slot=>{
-    const curr=schedule[slot]||[];if(!curr.length)return;
-    const hasHeavyStr=curr.some(id=>{const wt=workouts[id];return wt&&wt.type==='strength'&&wt.heavy});
-    const gi=slots.indexOf(slot);
-    if(hasHeavyStr&&gi>0){
-      const prev=slots[gi-1];
-      if((schedule[prev]||[]).some(id=>workouts[id]&&workouts[id].heavy))
-        warns.push(`${slotLabel(slot)}: heavy strength after hard session on ${slotLabel(prev)}`);
+  const allSlots=orderedSlots();
+  const gSlots=DAYS_EN.map(d=>`${group}-${d}`);
+
+  gSlots.forEach((slot,si)=>{
+    const curr=schedule[slot]||[]; if(!curr.length) return;
+    const gi=allSlots.indexOf(slot);
+
+    if(rules.noHardBeforeHeavyStrength?.enabled){
+      if(curr.some(id=>isHeavyStrength(id)) && gi>0){
+        const prevSlot=allSlots[gi-1];
+        if((schedule[prevSlot]||[]).some(id=>isHard(id)))
+          warns.push(`${DAYS[si]}: tung styrke etter hard økt`);
+      }
     }
-    const strCount=curr.filter(id=>workouts[id]&&workouts[id].type==='strength').length;
-    if(strCount>1) warns.push(`${slotLabel(slot)}: ${strCount} strength sessions on same day`);
-    if(curr.filter(id=>workouts[id]&&workouts[id].heavy).length>1)
-      warns.push(`${slotLabel(slot)}: multiple hard workouts stacked`);
+    if(rules.noStackedHard?.enabled){
+      if(curr.filter(id=>isHard(id)).length>1)
+        warns.push(`${DAYS[si]}: flere harde økter på samme dag`);
+    }
+    if(rules.noDoubleStrength?.enabled){
+      if(curr.filter(id=>workouts[id]?.type==='strength').length>1)
+        warns.push(`${DAYS[si]}: to styrkeøkter på samme dag`);
+    }
   });
-  const allIds=[].concat(...weekSlots.map(s=>schedule[s]||[]));
-  const str=allIds.filter(id=>workouts[id]&&workouts[id].type==='strength').length;
-  const z2=allIds.filter(id=>workouts[id]&&workouts[id].type==='z2').length;
-  const hi=allIds.filter(id=>workouts[id]&&workouts[id].type==='hi').length;
-  const wr=allIds.filter(id=>workouts[id]&&workouts[id].type==='wrestling').length;
-  return{warns,complete:str===4&&z2>=2&&hi>=1&&wr===1};
+
+  let complete=false;
+  if(rules.weekComplete?.enabled && warns.length===0){
+    const allIds=[].concat(...gSlots.map(s=>schedule[s]||[]));
+    const counts={}; allIds.forEach(id=>{ const t=typeOf(id); counts[t]=(counts[t]||0)+1; });
+    const tgt=rules.weekComplete.targets||{};
+    complete=Object.entries(tgt).every(([t,n])=>(counts[t]||0)>=n) && allIds.length>0;
+  }
+  return {warns,complete};
 }
 
-function renderWeekStatus(week){
-  const el=document.getElementById(`status-${week}`);
-  const{warns,complete}=analyzeWeek(week);
-  const allIds=[].concat(...DAYS.map(d=>schedule[`${week}-${d}`]||[]));
-  if(!allIds.length){el.textContent='—';el.className='week-status ws-info';return}
-  if(warns.length){el.textContent=`${warns.length} conflict${warns.length>1?'s':''}`;el.className='week-status ws-warn';}
-  else if(complete){el.textContent='Well planned';el.className='week-status ws-ok';}
-  else{el.textContent='In progress';el.className='week-status ws-info';}
+function renderWeekStatus(group){
+  const el=document.getElementById(`status-${group}`); if(!el) return;
+  const {warns,complete}=analyzeGroup(group);
+  const hasCards=[].concat(...DAYS_EN.map(d=>schedule[`${group}-${d}`]||[])).length>0;
+  if(!hasCards){ el.textContent='—'; el.className='week-status ws-info'; return; }
+  if(warns.length){ el.textContent=`${warns.length} konflikt${warns.length>1?'er':''}`; el.className='week-status ws-warn'; }
+  else if(complete){ el.textContent='Godt planlagt'; el.className='week-status ws-ok'; }
+  else{ el.textContent='Pågår'; el.className='week-status ws-info'; }
 }
 
-function renderGlobalWarns(){
-  const box=document.getElementById('global-warns');box.innerHTML='';
-  WEEKS.forEach(w=>{
-    analyzeWeek(w).warns.forEach(msg=>{
-      const el=document.createElement('div');el.className='warn';el.textContent=msg;box.appendChild(el);
+function renderWarns(){
+  const box=document.getElementById('global-warns'); box.innerHTML='';
+  ['prev','curr','next'].forEach(g=>{
+    const {warns}=analyzeGroup(g);
+    const label=g==='prev'?'Forrige uke':g==='curr'?'Denne uken':'Neste uke';
+    warns.forEach(msg=>{
+      const el=document.createElement('div'); el.className='warn-msg';
+      el.textContent=`${label} – ${msg}`; box.appendChild(el);
     });
   });
-  const rem=getBank().length;
-  if(rem){const el=document.createElement('div');el.className='info-msg';el.textContent=`${rem} workout${rem>1?'s':''} not yet scheduled`;box.appendChild(el)}
 }
 
 function highlightConflicts(){
   document.querySelectorAll('.day-col').forEach(c=>c.classList.remove('conflict'));
-  const slots=getOrderedSlots();
-  slots.forEach((slot,i)=>{
-    const col=document.querySelector(`[data-slot="${slot}"]`);if(!col)return;
+  const all=orderedSlots();
+  all.forEach((slot,i)=>{
+    const col=document.querySelector(`[data-slot="${slot}"]`); if(!col) return;
     const curr=schedule[slot]||[];
-    const hasHeavyStr=curr.some(id=>{const wt=workouts[id];return wt&&wt.type==='strength'&&wt.heavy});
-    if(hasHeavyStr&&i>0&&(schedule[slots[i-1]]||[]).some(id=>workouts[id]&&workouts[id].heavy))
-      col.classList.add('conflict');
-    if(curr.filter(id=>workouts[id]&&workouts[id].heavy).length>1)
-      col.classList.add('conflict');
+    let bad=false;
+    if(rules.noHardBeforeHeavyStrength?.enabled && curr.some(id=>isHeavyStrength(id)) && i>0)
+      if((schedule[all[i-1]]||[]).some(id=>isHard(id))) bad=true;
+    if(rules.noStackedHard?.enabled && curr.filter(id=>isHard(id)).length>1) bad=true;
+    if(rules.noDoubleStrength?.enabled && curr.filter(id=>workouts[id]?.type==='strength').length>1) bad=true;
+    if(bad) col.classList.add('conflict');
   });
 }
 
+function renderLegend(){
+  const el=document.getElementById('legend'); el.innerHTML='';
+  Object.entries(workoutTypes).forEach(([,t])=>{
+    const item=document.createElement('div'); item.className='leg-item';
+    item.innerHTML=`<div class="leg-dot" style="background:${t.bg};border:1px solid ${deriveColors(t.bg).border}"></div><span>${esc(t.label)}</span>`;
+    el.appendChild(item);
+  });
+}
+
+/* ── main render ── */
 function render(){
-  renderGrid('w1','grid-w1');renderGrid('w2','grid-w2');
+  ['prev','curr','next'].forEach(group=>{
+    const cont=document.getElementById(`section-${group}`);
+    cont.innerHTML='';
+    const sec=buildSection(group);
+    cont.appendChild(sec);
+    renderGrid(group);
+    renderWeekStatus(group);
+  });
   renderBank();
-  WEEKS.forEach(w=>renderWeekStatus(w));
-  renderGlobalWarns();
+  renderWarns();
   highlightConflicts();
+  renderLegend();
 }
 
-/* ── Modals ── */
-function openAddModal(){showWorkoutModal({label:'',type:'strength',heavy:true},false)}
-function openEditModal(id,slot){const wt=workouts[id];if(wt)showWorkoutModal({label:wt.label,type:wt.type,heavy:wt.heavy},true,id,slot)}
-function typeToClass(t){return{strength:'wc-strength',z2:'wc-cardio-z2',hi:'wc-cardio-hi',wrestling:'wc-wrestling',custom:'wc-custom'}[t]||'wc-custom'}
-function typeToHeavy(t){return['strength','wrestling','hi'].includes(t)}
-
-function showWorkoutModal(data,isEdit,id,slot){
+/* ── workout card modal (editor only) ── */
+function openWorkoutModal(id, fromSlot, isEdit){
+  if(!isEditor) return;
+  const w = isEdit && id ? workouts[id] : {label:'',type:Object.keys(workoutTypes)[0]||'custom',note:'',hard:false};
+  const opts = Object.entries(workoutTypes)
+    .map(([k,t])=>`<option value="${k}" ${w.type===k?'selected':''}>${esc(t.label)}</option>`).join('');
   const mc=document.getElementById('modal-container');
-  mc.innerHTML=`<div class="modal-bg" id="modal-bg"><div class="modal" onclick="event.stopPropagation()">
-    <h3>${isEdit?'Edit workout':'New workout'}</h3>
-    <label>Name</label>
-    <input id="m-label" value="${(data.label||'').replace(/"/g,'&quot;')}" placeholder="e.g. Lower A">
+  mc.innerHTML=`<div class="modal-bg" id="mbg"><div class="modal" onclick="event.stopPropagation()">
+    <h3>${isEdit?'Rediger kort':'Nytt kort'}</h3>
+    <label>Navn</label>
+    <input type="text" id="ml" value="${esc(w.label||'')}" placeholder="f.eks. Lower A – Knebøy">
     <label>Type</label>
-    <select id="m-type">
-      <option value="strength" ${data.type==='strength'?'selected':''}>Strength</option>
-      <option value="z2" ${data.type==='z2'?'selected':''}>Z2 cardio</option>
-      <option value="hi" ${data.type==='hi'?'selected':''}>Threshold / VO2</option>
-      <option value="wrestling" ${data.type==='wrestling'?'selected':''}>Wrestling</option>
-      <option value="custom" ${data.type==='custom'?'selected':''}>Custom</option>
-    </select>
-    <label style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
-      <input type="checkbox" id="m-heavy" ${data.heavy?'checked':''} style="width:auto;margin:0"> Counts as hard session
+    <select id="mt">${opts}</select>
+    <label style="display:flex;align-items:center;gap:7px;cursor:pointer;margin-bottom:12px">
+      <input type="checkbox" id="mh" ${w.hard?'checked':''} style="width:auto;margin:0;cursor:pointer">
+      <span>Hard økt</span>
+      <span style="font-size:11px;color:#888780">(brukes i konfliktsjekk)</span>
     </label>
+    <label>Notat (valgfritt)</label>
+    <textarea id="mn" rows="2">${esc(w.note||'')}</textarea>
     <div class="modal-actions">
-      ${isEdit?`<button class="btn-sm modal-del" onclick="deleteWorkout('${id}')">Delete</button>`:''}
-      <button class="btn-sm" onclick="closeModal()">Cancel</button>
-      <button class="btn-sm btn-primary" id="modal-save-btn">${isEdit?'Save':'Add'}</button>
+      ${isEdit?'<button class="btn modal-del" id="mdel">Slett kort</button>':''}
+      <button class="btn" onclick="closeModal()">Avbryt</button>
+      <button class="btn btn-blue" id="msave">${isEdit?'Lagre':'Legg til'}</button>
     </div>
   </div></div>`;
-  document.getElementById('modal-bg').addEventListener('click',closeModal);
-  document.getElementById('m-type').addEventListener('change',function(){document.getElementById('m-heavy').checked=typeToHeavy(this.value)});
-  document.getElementById('modal-save-btn').addEventListener('click',()=>saveModal(id||'',isEdit));
+  document.getElementById('mbg').addEventListener('click',closeModal);
+  document.getElementById('msave').addEventListener('click',()=>{
+    const label=document.getElementById('ml').value.trim(); if(!label) return;
+    const type=document.getElementById('mt').value;
+    const hard=document.getElementById('mh').checked;
+    const note=document.getElementById('mn').value.trim();
+    if(isEdit && id) workouts[id]={...workouts[id],label,type,hard,note};
+    else workouts[genId()]={label,type,hard,note};
+    closeModal(); render();
+  });
+  if(isEdit) document.getElementById('mdel').addEventListener('click',()=>{
+    Object.keys(schedule).forEach(s=>{ schedule[s]=(schedule[s]||[]).filter(x=>x!==id); });
+    delete workouts[id]; closeModal(); render();
+  });
 }
 
-function showConfirmModal(title,message,onConfirm){
+/* ── settings modal ── */
+function openSettingsModal(){
+  if(!isEditor) return;
   const mc=document.getElementById('modal-container');
-  mc.innerHTML=`<div class="modal-bg" id="modal-bg"><div class="modal" onclick="event.stopPropagation()">
-    <h3>${title}</h3><p>${message}</p>
+  mc.innerHTML=`<div class="modal-bg" id="mbg"><div class="modal modal-wide" onclick="event.stopPropagation()">
+    <h3>Innstillinger</h3>
+    <div class="settings-section">
+      <h4>Treningstyper og farger</h4>
+      <div id="stl"></div>
+      <button class="btn btn-blue" style="margin-top:8px" id="add-type">+ Legg til type</button>
+    </div>
+    <div class="settings-section">
+      <h4>Konfliktregler</h4>
+      <div id="srl"></div>
+    </div>
     <div class="modal-actions">
-      <button class="btn-sm" onclick="closeModal()">Cancel</button>
-      <button class="btn-sm btn-primary" id="confirm-btn">Confirm</button>
+      <button class="btn" onclick="closeModal()">Avbryt</button>
+      <button class="btn btn-blue" id="ssave">Lagre innstillinger</button>
     </div>
   </div></div>`;
-  document.getElementById('modal-bg').addEventListener('click',closeModal);
-  document.getElementById('confirm-btn').addEventListener('click',()=>{closeModal();onConfirm()});
+  document.getElementById('mbg').addEventListener('click',closeModal);
+  rebuildTypesList(); rebuildRulesList();
+
+  document.getElementById('add-type').addEventListener('click',()=>{
+    workoutTypes['t_'+genId()]={label:'Ny type',bg:'#d0e8ff'};
+    rebuildTypesList(); rebuildRulesList();
+  });
+
+  document.getElementById('ssave').addEventListener('click',()=>{
+    const nt={};
+    document.querySelectorAll('.ter').forEach(row=>{
+      const k=row.dataset.key;
+      nt[k]={
+        label: row.querySelector('.te-n').value.trim()||'Type',
+        bg:    row.querySelector('.te-bg').value,
+      };
+    });
+    workoutTypes=nt;
+    document.querySelectorAll('.rr').forEach(row=>{
+      const k=row.dataset.key; if(!rules[k]) return;
+      rules[k].enabled=row.querySelector('.re').checked;
+      if(k==='weekComplete'){
+        const tgt={};
+        row.querySelectorAll('.ti').forEach(inp=>{ tgt[inp.dataset.t]=parseInt(inp.value)||0; });
+        rules[k].targets=tgt;
+      }
+    });
+    closeModal(); render();
+  });
 }
 
-function closeModal(){document.getElementById('modal-container').innerHTML=''}
-
-function saveModal(id,isEdit){
-  const label=document.getElementById('m-label').value.trim();if(!label)return;
-  const type=document.getElementById('m-type').value;
-  const heavy=document.getElementById('m-heavy').checked;
-  const cls=typeToClass(type);
-  if(isEdit&&id&&workouts[id]){workouts[id]={...workouts[id],label,type,heavy,cls}}
-  else{workouts[genId()]={label,type,heavy,cls}}
-  closeModal();render();
+function rebuildTypesList(){
+  const list=document.getElementById('stl'); if(!list) return;
+  list.innerHTML='';
+  Object.entries(workoutTypes).forEach(([key,t])=>{
+    const {color,border}=deriveColors(t.bg);
+    const row=document.createElement('div');
+    row.className='ter type-edit-row'; row.dataset.key=key;
+    row.innerHTML=
+      `<input type="text" class="te-n" value="${esc(t.label)}" placeholder="Navn" style="flex:1;min-width:80px;margin:0">`+
+      `<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#5f5e5a;flex-shrink:0">`+
+        `<span>Farge</span>`+
+        `<div class="cp-wrap">`+
+          `<div class="cp-swatch" id="sw-${key}" style="background:${t.bg};border-color:${border}"></div>`+
+          `<input type="color" class="te-bg" value="${t.bg}" data-sw="sw-${key}">`+
+        `</div>`+
+        `<div class="te-preview" id="prev-${key}" style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:4px;background:${t.bg};color:${color};border:0.5px solid ${border};white-space:nowrap">${esc(t.label)}</div>`+
+      `</div>`+
+      `<button class="btn" style="padding:2px 7px;font-size:10px;flex-shrink:0" data-dk="${key}">✕</button>`;
+    list.appendChild(row);
+    const inp=row.querySelector('.te-bg');
+    inp.addEventListener('input',function(){
+      const bg=this.value;
+      const sw=document.getElementById('sw-'+key);
+      const pv=document.getElementById('prev-'+key);
+      const nm=row.querySelector('.te-n');
+      const {color:c,border:br}=deriveColors(bg);
+      if(sw){ sw.style.background=bg; sw.style.borderColor=br; }
+      if(pv){ pv.style.background=bg; pv.style.color=c; pv.style.borderColor=br; pv.textContent=nm.value||'Type'; }
+    });
+    row.querySelector('.te-n').addEventListener('input',function(){
+      const pv=document.getElementById('prev-'+key); if(pv) pv.textContent=this.value||'Type';
+    });
+    row.querySelector(`[data-dk="${key}"]`).addEventListener('click',()=>{ delete workoutTypes[key]; rebuildTypesList(); rebuildRulesList(); });
+  });
 }
 
-function deleteWorkout(id){
-  allSlotKeys().forEach(s=>{schedule[s]=(schedule[s]||[]).filter(x=>x!==id)});
-  delete workouts[id];closeModal();render();
+function rebuildRulesList(){
+  const list=document.getElementById('srl'); if(!list) return;
+  list.innerHTML='';
+  Object.entries(rules).forEach(([key,rule])=>{
+    const row=document.createElement('div'); row.className='rr rule-row'; row.dataset.key=key;
+    let extra='';
+    if(key==='weekComplete'){
+      const currentTgt=rule.targets||{};
+      extra='<div class="rule-targets">'+
+        Object.entries(workoutTypes).map(([t,td])=>{
+          const n=currentTgt[t]??0;
+          const {color,border}=deriveColors(td.bg);
+          const pill=`<span style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:4px;background:${td.bg};color:${color};border:0.5px solid ${border};white-space:nowrap">${esc(td.label)}</span>`;
+          return `<div class="rule-target-row">${pill}<input type="number" class="ti" data-t="${t}" value="${n}" min="0" max="30"></div>`;
+        }).join('')+
+      '</div>';
+    }
+    row.innerHTML=
+      `<input type="checkbox" class="re" style="margin-top:3px;flex-shrink:0" ${rule.enabled?'checked':''}>`+
+      `<div class="rule-info">`+
+        `<div class="rule-title">${esc(rule.label)}</div>`+
+        `<div class="rule-desc">${esc(rule.desc||'')}</div>`+
+        extra+
+      `</div>`;
+    list.appendChild(row);
+  });
 }
+
+/* ── confirm / reset ── */
+function confirmReset(){
+  if(!isEditor) return;
+  showConfirm('Nullstill planlegger?',
+    'Alle planlagte økter og kort fjernes. Treningstyper og regler beholdes. Endringer lagres ikke før du trykker Lagre.',
+    ()=>{ workouts={}; schedule={}; ensureKeys(); render(); });
+}
+function showConfirm(title,msg,onOk){
+  const mc=document.getElementById('modal-container');
+  mc.innerHTML=`<div class="modal-bg" id="mbg"><div class="modal" onclick="event.stopPropagation()">
+    <h3>${title}</h3><p>${msg}</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Avbryt</button>
+      <button class="btn btn-blue" id="cok">Bekreft</button>
+    </div>
+  </div></div>`;
+  document.getElementById('mbg').addEventListener('click',closeModal);
+  document.getElementById('cok').addEventListener('click',()=>{ closeModal(); onOk(); });
+}
+function closeModal(){ document.getElementById('modal-container').innerHTML=''; }
 
 init();
 </script>
