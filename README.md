@@ -270,15 +270,15 @@ function genId(){ return 'w'+(++uidCounter)+'_'+Math.random().toString(36).slice
 /* ── cloud storage via JSONBin.io ── */
 async function cloudLoad(){
   try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, {
-      headers: { 'X-Access-Key': apiKey || undefined }
-    });
+    // If we have an API key, use it (can read private bins too)
+    const headers = {};
+    if(apiKey) headers['X-Master-Key'] = apiKey;
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { headers });
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     return json.record || null;
   } catch(e) {
-    console.warn('Cloud load failed, trying public access:', e);
-    // Try without key (public bin)
+    console.warn('Cloud load with key failed, trying public access:', e);
     try {
       const res = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`);
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -303,11 +303,15 @@ async function cloudSave(){
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'X-Access-Key': apiKey
+        'X-Master-Key': apiKey
       },
       body: JSON.stringify(data)
     });
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    if(!res.ok){
+      const errBody = await res.text();
+      console.error('Save response:', res.status, errBody);
+      throw new Error(`HTTP ${res.status}: ${errBody}`);
+    }
     lastSaved = new Date();
     return true;
   } catch(e) {
