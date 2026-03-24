@@ -622,6 +622,9 @@ function makeCard(id, fromSlot){
       if(a==='edit'  ) openWorkoutModal(btn.dataset.id, btn.dataset.s, true);
       if(a==='remove'){ removeFromSlot(btn.dataset.id, btn.dataset.s); render(); }
     });
+  } else {
+    card.style.cursor='pointer';
+    card.addEventListener('click', ()=> openViewModal(id));
   }
   return card;
 }
@@ -828,6 +831,28 @@ function render(){
   renderWarns();
   highlightConflicts();
   renderLegend();
+}
+
+/* ── view card modal (read-only) ── */
+function openViewModal(id){
+  const w = workouts[id]; if(!w) return;
+  const t = typeDef(w.type);
+  const typeName = workoutTypes[w.type]?.label || w.type;
+  const {color,border} = deriveColors(t.bg);
+  const mc = document.getElementById('modal-container');
+  mc.innerHTML=`<div class="modal-bg" id="mbg"><div class="modal" onclick="event.stopPropagation()">
+    <h3>${esc(w.label)}</h3>
+    <label>Type</label>
+    <div style="margin-bottom:10px">
+      <span style="font-size:12px;font-weight:500;padding:3px 10px;border-radius:5px;background:${t.bg};color:${color};border:0.5px solid ${border}">${esc(typeName)}</span>
+      ${w.hard ? '<span style="font-size:11px;color:#A32D2D;margin-left:8px">● Hard økt</span>' : '<span style="font-size:11px;color:#888780;margin-left:8px">Lett/moderat</span>'}
+    </div>
+    ${w.note ? `<label>Notat</label><p style="font-size:12px;color:#1a1a18;background:#f5f4f0;border:0.5px solid #d3d1c7;border-radius:6px;padding:6px 8px;line-height:1.5">${esc(w.note)}</p>` : ''}
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Lukk</button>
+    </div>
+  </div></div>`;
+  document.getElementById('mbg').addEventListener('click',closeModal);
 }
 
 /* ── workout card modal (editor only) ── */
