@@ -323,8 +323,8 @@ async function init(){
     isAuthenticated = true;
   }
 
-  // Always start in edit mode — everyone can edit, only authenticated users can save
-  isEditor = true;
+  // Start in view mode by default
+  isEditor = false;
 
   // Load from cloud
   const data = await cloudLoad();
@@ -346,7 +346,6 @@ async function init(){
   ensureKeys();
 
   document.getElementById('loading').style.display='none';
-  document.body.querySelector('.planner').classList.add('edit-mode');
   renderModeBanner();
   renderToolbar();
   render();
@@ -354,14 +353,20 @@ async function init(){
 
 function renderModeBanner(){
   const el = document.getElementById('mode-banner');
-  if(isAuthenticated){
+  if(!isEditor){
+    el.innerHTML = `<div class="mode-banner viewer">
+      <span class="mode-icon">👀</span>
+      <span class="mode-text"><strong>Visningsmodus</strong> — du ser den sist lagrede treningsplanen</span>
+      ${lastSaved ? `<span class="mode-time">Oppdatert: ${lastSaved.toLocaleString('nb-NO')}</span>` : ''}
+    </div>`;
+  } else if(isAuthenticated){
     el.innerHTML = `<div class="mode-banner editor">
       <span class="mode-icon">✏️</span>
       <span class="mode-text"><strong>Redigeringsmodus</strong> — endringer kan lagres til skyen</span>
       ${lastSaved ? `<span class="mode-time">Sist lagret: ${lastSaved.toLocaleString('nb-NO')}</span>` : ''}
     </div>`;
   } else {
-    el.innerHTML = `<div class="mode-banner viewer">
+    el.innerHTML = `<div class="mode-banner editor">
       <span class="mode-icon">✏️</span>
       <span class="mode-text"><strong>Redigeringsmodus</strong> — du kan redigere fritt, men trenger API-nøkkel for å lagre</span>
       ${lastSaved ? `<span class="mode-time">Sist oppdatert: ${lastSaved.toLocaleString('nb-NO')}</span>` : ''}
@@ -371,17 +376,59 @@ function renderModeBanner(){
 
 function renderToolbar(){
   const tb = document.getElementById('toolbar');
-  tb.innerHTML = `
-    <span class="save-indicator" id="save-indicator"></span>
-    <button class="btn btn-green" onclick="handleSave()">💾 Lagre</button>
-    <button class="btn" onclick="handleReload()">🔄 Last inn på nytt</button>
-    <div class="btn-divider"></div>
-    <button class="btn btn-blue" onclick="openWorkoutModal(null,null,false)">+ Nytt kort</button>
-    <button class="btn" onclick="openSettingsModal()">Innstillinger</button>
-    <button class="btn" onclick="confirmReset()">Nullstill</button>
-    ${isAuthenticated ? `<div class="btn-divider"></div><button class="btn btn-red" onclick="logout()">Logg ut</button>` : ''}
-  `;
-  document.getElementById('bank-wrap').style.display='';
+  if(!isEditor){
+    // View mode: Oppdater + Rediger
+    tb.innerHTML = `
+      <button class="btn" onclick="handleReload()">🔄 Oppdater</button>
+      <button class="btn btn-blue" onclick="enterEditMode()">✏️ Rediger</button>
+    `;
+    document.getElementById('bank-wrap').style.display='none';
+  } else {
+    // Edit mode: full toolbar
+    tb.innerHTML = `
+      <span class="save-indicator" id="save-indicator"></span>
+      <button class="btn btn-green" onclick="handleSave()">💾 Lagre</button>
+      <button class="btn" onclick="exitEditMode()">↩ Avslutt redigering</button>
+      <div class="btn-divider"></div>
+      <button class="btn btn-blue" onclick="openWorkoutModal(null,null,false)">+ Nytt kort</button>
+      <button class="btn" onclick="openSettingsModal()">Innstillinger</button>
+      <button class="btn" onclick="confirmReset()">Nullstill</button>
+      ${isAuthenticated ? `<div class="btn-divider"></div><button class="btn btn-red" onclick="logout()">Logg ut</button>` : ''}
+    `;
+    document.getElementById('bank-wrap').style.display='';
+  }
+}
+
+function enterEditMode(){
+  isEditor = true;
+  document.body.querySelector('.planner').classList.add('edit-mode');
+  renderModeBanner();
+  renderToolbar();
+  render();
+}
+
+async function exitEditMode(){
+  isEditor = false;
+  document.body.querySelector('.planner').classList.remove('edit-mode');
+  // Reload saved data to discard unsaved changes
+  document.getElementById('loading').style.display='flex';
+  const data = await cloudLoad();
+  if(data){
+    workouts      = data.workouts      || {};
+    schedule      = data.schedule      || {};
+    const rawTypes = data.workoutTypes || deepCopy(DEFAULT_TYPES);
+    workoutTypes = {};
+    Object.entries(rawTypes).forEach(([k,t])=>{ workoutTypes[k]={label:t.label||k, bg:t.bg||'#eee'}; });
+    rules         = data.rules         || deepCopy(DEFAULT_RULES);
+    collapseState = data.collapseState || {prev:true,next:true};
+    uidCounter    = data.uidCounter    || 0;
+    if(data.savedAt) lastSaved = new Date(data.savedAt);
+  }
+  ensureKeys();
+  document.getElementById('loading').style.display='none';
+  renderModeBanner();
+  renderToolbar();
+  render();
 }
 
 async function handleReload(){
