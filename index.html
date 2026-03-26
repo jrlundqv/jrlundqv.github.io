@@ -225,10 +225,26 @@ let isEditor     = false;
 let isAuthenticated = false;
 let apiKey       = '';
 let lastSaved    = null;
+let todayOverride = null; // set from WorldTimeAPI at startup
 let dragId = null, dragFrom = null;
 
 /* ── date helpers ── */
-function todayISO(){ return localISO(new Date()); }
+function todayISO(){ return todayOverride || localISO(new Date()); }
+
+async function fetchToday(){
+  try {
+    const res = await fetch('https://worldtimeapi.org/api/timezone/Europe/Oslo');
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    // datetime format: "2026-03-26T14:30:00.123456+02:00"
+    todayOverride = json.datetime.slice(0, 10);
+    console.log('WorldTimeAPI date:', todayOverride);
+  } catch(e) {
+    console.warn('WorldTimeAPI unavailable, using local date:', e);
+    todayOverride = localISO(new Date());
+  }
+}
+
 function localISO(d){
   const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${dd}`;
@@ -261,6 +277,53 @@ function ensureKeys(){
 }
 function genId(){ return 'w'+(++uidCounter)+'_'+Math.random().toString(36).slice(2,5); }
 
+/* ── week progression ── */
+function shiftWeeks(data){
+  // anchorMonday = ISO date string of the Monday that was "curr" when last saved
+  const anchor = data.anchorMonday;
+  if(!anchor) return; // first time or legacy data, no shift needed
+
+  const savedMonday = getMondayOfWeek(anchor);
+  const currentMonday = getMondayOfWeek(todayISO());
+  const diffWeeks = Math.round((currentMonday - savedMonday) / (7 * 86400000));
+
+  if(diffWeeks === 0) return; // same week, nothing to do
+
+  console.log(`Week shift: ${diffWeeks} week(s) since last save`);
+
+  const oldSchedule = deepCopy(schedule);
+  // Clear all schedule slots
+  schedule = {};
+  ensureKeys();
+
+  if(diffWeeks === 1){
+    // curr → prev, next → curr, new next is empty
+    DAYS_EN.forEach(d => {
+      schedule[`prev-${d}`] = oldSchedule[`curr-${d}`] || [];
+      schedule[`curr-${d}`] = oldSchedule[`next-${d}`] || [];
+      schedule[`next-${d}`] = [];
+    });
+  } else if(diffWeeks === 2){
+    // next → prev, rest empty
+    DAYS_EN.forEach(d => {
+      schedule[`prev-${d}`] = oldSchedule[`next-${d}`] || [];
+      schedule[`curr-${d}`] = [];
+      schedule[`next-${d}`] = [];
+    });
+  } else if(diffWeeks === -1){
+    // shifted backwards (rare, e.g. timezone edge case): prev → curr, curr → next
+    DAYS_EN.forEach(d => {
+      schedule[`next-${d}`] = oldSchedule[`curr-${d}`] || [];
+      schedule[`curr-${d}`] = oldSchedule[`prev-${d}`] || [];
+      schedule[`prev-${d}`] = [];
+    });
+  } else {
+    // 3+ weeks or more backwards: all data is outdated, clear everything
+    // but keep the workout cards themselves (just unschedule them)
+    ensureKeys();
+  }
+}
+
 /* ── cloud storage via JSONBin.io ── */
 async function cloudLoad(){
   try {
@@ -289,7 +352,8 @@ async function cloudSave(){
   if(!apiKey) return false;
   try {
     const data = {
-      workouts, schedule, workoutTypes, rules, collapseState, uidCounter,
+      workouts, schedule, workoutTypes, rules, uidCounter,
+      anchorMonday: localISO(getMondayOfWeek(todayISO())),
       savedAt: new Date().toISOString(),
       savedBy: 'editor'
     };
@@ -326,6 +390,9 @@ async function init(){
   // Start in view mode by default
   isEditor = false;
 
+  // Fetch authoritative date from WorldTimeAPI (fallback to local)
+  await fetchToday();
+
   // Load from cloud
   const data = await cloudLoad();
   if(data){
@@ -335,9 +402,12 @@ async function init(){
     workoutTypes = {};
     Object.entries(rawTypes).forEach(([k,t])=>{ workoutTypes[k]={label:t.label||k, bg:t.bg||'#eee'}; });
     rules         = data.rules         || deepCopy(DEFAULT_RULES);
-    collapseState = data.collapseState || {prev:true,next:true};
+    collapseState = {prev:true, next:true};
     uidCounter    = data.uidCounter    || 0;
     if(data.savedAt) lastSaved = new Date(data.savedAt);
+    ensureKeys();
+    // Shift weeks based on how much time has passed since last save
+    shiftWeeks(data);
   } else {
     workoutTypes = deepCopy(DEFAULT_TYPES);
     rules        = deepCopy(DEFAULT_RULES);
@@ -420,9 +490,11 @@ async function exitEditMode(){
     workoutTypes = {};
     Object.entries(rawTypes).forEach(([k,t])=>{ workoutTypes[k]={label:t.label||k, bg:t.bg||'#eee'}; });
     rules         = data.rules         || deepCopy(DEFAULT_RULES);
-    collapseState = data.collapseState || {prev:true,next:true};
+    collapseState = {prev:true, next:true};
     uidCounter    = data.uidCounter    || 0;
     if(data.savedAt) lastSaved = new Date(data.savedAt);
+    ensureKeys();
+    shiftWeeks(data);
   }
   ensureKeys();
   document.getElementById('loading').style.display='none';
@@ -441,9 +513,11 @@ async function handleReload(){
     workoutTypes = {};
     Object.entries(rawTypes).forEach(([k,t])=>{ workoutTypes[k]={label:t.label||k, bg:t.bg||'#eee'}; });
     rules         = data.rules         || deepCopy(DEFAULT_RULES);
-    collapseState = data.collapseState || {prev:true,next:true};
+    collapseState = {prev:true, next:true};
     uidCounter    = data.uidCounter    || 0;
     if(data.savedAt) lastSaved = new Date(data.savedAt);
+    ensureKeys();
+    shiftWeeks(data);
   }
   ensureKeys();
   document.getElementById('loading').style.display='none';
